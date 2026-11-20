@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Could not book{% endblock %}
+{% block content %}
+<h1>We could not make this booking</h1>
+{% if decision.reason == 'conflict' %}
+  <p class="notice" role="alert">Someone booked the last table for that time while you were filling in the form. Nothing was booked.</p>
+  {% if decision.alternatives %}
+    <h2>Nearest free times</h2>
+    <ul class="times">
+      {% for t in decision.alternatives %}
+        <li><a href="{{ url_for('guest.details', date=form.get('date'), party=form.get('party'), start=t) }}">{{ t }}</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}<p>No other times are free on that date.</p>{% endif %}
+{% else %}
+  <p class="notice" role="alert">{{ decision.message }}</p>
+{% endif %}
+<p><a href="{{ url_for('guest.book') }}">Search again</a></p>
+{% endblock %}

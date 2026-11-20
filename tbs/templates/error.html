@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ error.name }}{% endblock %}
+{% block content %}
+<h1>{{ error.code }}: {{ error.name }}</h1>
+<p>{{ error.description }}</p>
+<p><a href="{{ url_for('guest.book') }}">Back to booking</a></p>
+{% endblock %}

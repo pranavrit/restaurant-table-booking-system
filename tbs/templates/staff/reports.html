@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<h1>Reports</h1>
+<form method="get" class="row">
+  <div class="field"><label for="first">From</label><input id="first" type="date" name="first" value="{{ first }}"></div>
+  <div class="field"><label for="last">To</label><input id="last" type="date" name="last" value="{{ last }}"></div>
+  <div class="field"><button type="submit">Show</button></div></form>
+{% if not result.ok %}<p class="flash error" role="alert">{{ result.message }}</p>
+{% else %}{% set r = result.data.report %}
+<div class="grid2">
+  <div class="card"><h2>No-show rate</h2><p class="stat">{{ r.no_show_rate }}</p><p class="hint">{{ r.no_show_detail }}</p></div>
+  <div class="card"><h2>Bookings with an outcome</h2><p class="stat">{{ r.outcome_share }}</p><p class="hint">Past bookings with a status other than Confirmed.</p></div>
+  <div class="card"><h2>Conflicts refused</h2><p class="stat">{{ r.refused_conflicts }}</p></div>
+</div>
+<h2>Bookings by final status</h2>
+<table><thead><tr><th>Status</th><th>Bookings</th></tr></thead><tbody>
+  {% for label, n in r.counts.items() %}<tr><td>{{ label }}</td><td>{{ n }}</td></tr>{% endfor %}</tbody></table>
+<p class="hint">Totals only. This system shows no ranking or comparison of staff or guests.</p>
+{% endif %}
+{% endblock %}

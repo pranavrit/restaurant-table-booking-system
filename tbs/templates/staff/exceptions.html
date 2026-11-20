@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Exception log{% endblock %}
+{% block content %}
+<h1>Exception bookings</h1>
+<form method="get" class="row">
+  <div class="field"><label for="first">From</label><input id="first" type="date" name="first" value="{{ first }}"></div>
+  <div class="field"><label for="last">To</label><input id="last" type="date" name="last" value="{{ last }}"></div>
+  <div class="field"><button type="submit">Show</button></div></form>
+{% if not result.ok %}<p class="flash error" role="alert">{{ result.message }}</p>
+{% else %}
+<table><thead><tr><th>Date</th><th>Approved by</th><th>Reason</th><th>Booking</th></tr></thead><tbody>
+  {% for e in result.data.entries %}<tr><td>{{ e.date }}</td><td>{{ e.actor }}</td><td>{{ e.reason }}</td>
+    <td><a href="{{ url_for('staff.booking_view', reference=e.reference) }}">{{ e.reference }}</a></td></tr>
+  {% else %}<tr><td colspan="4">No exception bookings in this range.</td></tr>{% endfor %}</tbody></table>
+{% endif %}
+{% endblock %}

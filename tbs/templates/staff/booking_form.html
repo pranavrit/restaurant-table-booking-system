@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, csrf %}
+{% block title %}{{ 'Change booking' if editing else 'New booking' }}{% endblock %}
+{% block content %}
+<h1>{{ 'Change booking ' ~ editing.reference if editing else 'New booking' }}</h1>
+{% if decision and decision.kind == 'refused' %}
+  <p class="flash error" role="alert">{{ decision.message }}
+    {% if decision.alternatives %}Nearest free start times: {{ decision.alternatives|join(', ') }}.{% endif %}</p>
+{% elif errors %}<p class="flash error" role="alert">Nothing was saved. Fix the fields marked below.</p>{% endif %}
+<form method="post" novalidate>
+  {{ csrf() }}
+  <div class="grid2">
+    <div class="field {% if errors.get('date') %}has-error{% endif %}"><label for="date">Date *</label>
+      <input id="date" type="date" name="date" value="{{ form.get('date') or default_date }}" required>
+      {% if errors.get('date') %}<p class="error">{{ errors['date'] }}</p>{% endif %}</div>
+    {{ field('start', 'Start time (24-hour)', form, errors, type='time', required=True) }}
+    {{ field('party', 'Party size', form, errors, type='number', required=True, attrs='min="1" max="50"') }}
+  </div>
+  {% if not editing %}
+    {{ field('name', 'Guest name', form, errors, required=True, attrs='maxlength="100"') }}
+    <div class="grid2">
+      {{ field('phone', 'Phone', form, errors, type='tel') }}
+      {{ field('email', 'E-mail', form, errors, type='email', hint='At least one of phone or e-mail.') }}
+    </div>
+    <div class="field {% if errors.get('channel') %}has-error{% endif %}"><label for="channel">Booking channel *</label>
+      <select id="channel" name="channel" required><option value="">Choose...</option>
+        {% for key, label in channels.items() %}<option value="{{ key }}" {% if form.get('channel') == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+      {% if errors.get('channel') %}<p class="error">{{ errors['channel'] }}</p>{% endif %}</div>
+    <div class="field"><label><input type="checkbox" name="step_free" {% if form.get('step_free') %}checked{% endif %}> Step-free access requested</label></div>
+    {{ field('dietary', 'Dietary note', form, errors, attrs='maxlength="300"') }}
+  {% endif %}
+  <div class="field"><label for="tables">Table (optional, otherwise chosen for you)</label>
+    <select id="tables" name="tables" multiple size="{{ [setup.tables|length, 6]|min }}">
+      {% for t in setup.tables|sort(attribute='label') %}<option value="{{ t.id }}">{{ t.label }} ({{ t.min_seats }}-{{ t.max_seats }} seats)</option>{% endfor %}</select>
+    <p class="hint">Hold Ctrl or Cmd to pick several tables that can be combined.</p>
+    {% if errors.get('tables') %}<p class="error">{{ errors['tables'] }}</p>{% endif %}</div>
+  {% if account['role'] == 'Manager' %}
+  <fieldset class="card"><legend>Manager exception</legend>
+    <label><input type="checkbox" name="exception" {% if form.get('exception') %}checked{% endif %}> This is an exception booking (party above the table or online maximum)</label>
+    {{ field('reason', 'Reason (at least 5 characters)', form, errors) }}
+  </fieldset>
+  {% endif %}
+  <button type="submit">{{ 'Save change' if editing else 'Confirm booking' }}</button>
+  <a class="button secondary" href="{{ url_for('staff.day') }}">Back</a>
+</form>
+{% endblock %}

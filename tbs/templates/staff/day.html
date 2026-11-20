@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, status_badge %}
+{% block title %}Day list{% endblock %}
+{% block content %}
+<h1>Day list: {{ day|longdate }}</h1>
+<form method="get" class="row"><div class="field"><label for="date">Date</label>
+  <input id="date" type="date" name="date" value="{{ day }}"></div>
+  <div class="field"><button class="secondary" type="submit">Show</button></div></form>
+{% if closed %}<p class="notice">The restaurant is marked closed on this date.</p>{% endif %}
+
+{% if missing %}
+<section class="card" aria-labelledby="missing"><h2 id="missing">Bookings with no outcome</h2>
+  <p class="hint">Still Confirmed after the start time plus the {{ grace }}-minute grace period.</p>
+  <ul>{% for b in missing %}<li><a href="{{ url_for('staff.booking_view', reference=b.reference) }}">{{ b.reference }}</a>
+    {{ b.booking_date }} {{ b.start_time }}, party of {{ b.party_size }}, {{ b.guest_name or 'name removed' }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+<div class="toolbar" id="day-tools">
+  <input type="search" id="day-filter" placeholder="Search name, reference or table" aria-label="Filter the day list">
+  <div class="chips" role="group" aria-label="Filter by status">
+    <button type="button" class="chip on" data-status="">All</button>
+    {% for st in Status.ALL %}<button type="button" class="chip" data-status="{{ st|lower }}">{{ st }}</button>{% endfor %}
+  </div>
+  <label class="auto"><input type="checkbox" id="auto-refresh"> Refresh every minute</label>
+  <span id="day-count" class="hint" aria-live="polite"></span>
+</div>
+<div class="table-wrap"><table id="day-table">
+  <caption class="hint">{{ rows|length }} row(s), in start-time order</caption>
+  <thead><tr><th>Time</th><th>Tables</th><th>Party</th><th>Guest</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    {% if r.kind == 'booking' %}{% set b = r.booking %}
+    <tr data-row data-status="{{ b.status|lower }}">
+      <td>{{ r.start }}</td><td>{{ r.tables }}</td><td>{{ r.party }}</td>
+      <td><a href="{{ url_for('staff.booking_view', reference=b.reference) }}">{{ b.guest_name or 'Name removed' }}</a><br><small>{{ b.reference }} · {{ b.channel }}</small></td>
+      <td>{{ status_badge(b.status) }}{% if b.late_cancel %}<span class="mark">late cancellation</span>{% endif %}</td>
+      <td>
+        {% if b.step_free %}<span class="mark">Step-free access</span>{% endif %}
+        {% if b.dietary_note %}<span class="mark">Diet: {{ b.dietary_note }}</span>{% endif %}
+        {% if b.attendance_confirmed_at %}<span class="mark">Attendance confirmed</span>{% endif %}
+        {% if r.message_failed %}<span class="mark">E-mail failed: call the guest</span>{% endif %}
+        {% if r.no_email_mark %}<span class="mark">no e-mail: call if needed</span>{% endif %}
+      </td>
+      <td>
+        {% if b.status == 'Confirmed' %}
+          {% for action, label in (('arrived','Arrived'),('seated','Seated'),('no-show','No-show')) %}
+          <form method="post" class="inline" {% if action == 'no-show' %}data-confirm="Mark {{ b.guest_name or b.reference }} as a no-show? The table is freed."{% endif %} action="{{ url_for('staff.booking_mark', reference=b.reference, outcome=action) }}">
+            {{ csrf() }}<input type="hidden" name="back" value="{{ url_for('staff.day', date=day) }}">
+            <button class="small secondary" type="submit">{{ label }}</button></form>
+          {% endfor %}
+        {% elif b.status == 'Arrived' %}
+          <form method="post" class="inline" action="{{ url_for('staff.booking_mark', reference=b.reference, outcome='seated') }}">
+            {{ csrf() }}<input type="hidden" name="back" value="{{ url_for('staff.day', date=day) }}">
+            <button class="small secondary" type="submit">Seated</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr data-row data-status="seated"><td>{{ r.start }}</td><td>{{ r.tables }}</td><td>{{ r.party }}</td><td>Walk-in</td><td><span class="badge s-seated">Seated</span></td><td></td><td></td></tr>
+    {% endif %}
+  {% else %}
+    <tr><td colspan="7">No bookings or walk-ins on this date.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<section class="card" aria-labelledby="walkin"><h2 id="walkin">Record a walk-in</h2>
+  <form method="post" action="{{ url_for('staff.walkin') }}" class="row">{{ csrf() }}
+    <div class="field"><label for="wparty">Party size</label><input id="wparty" name="party" type="number" min="1" max="50" required></div>
+    <div class="field"><label for="wtables">Table (optional, otherwise chosen for you)</label>
+      <select id="wtables" name="tables"><option value="">Choose automatically</option>
+        {% for t in setup.tables|sort(attribute='label') %}<option value="{{ t.id }}">{{ t.label }} ({{ t.min_seats }}-{{ t.max_seats }})</option>{% endfor %}</select></div>
+    <div class="field"><button type="submit">Seat walk-in now</button></div>
+  </form></section>
+{% endblock %}

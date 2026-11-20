@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Confirm attendance{% endblock %}
+{% block content %}
+<h1>Are you still coming?</h1>
+<div class="card"><dl class="facts">
+  <dt>Reference</dt><dd>{{ booking.reference }}</dd><dt>Date</dt><dd>{{ booking.booking_date|longdate }}</dd>
+  <dt>Time</dt><dd>{{ booking.start_time }}</dd><dt>Party size</dt><dd>{{ booking.party_size }}</dd></dl></div>
+<form method="post">{{ csrf() }}<button type="submit">Yes, we are coming</button></form>
+{% endblock %}

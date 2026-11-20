@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Book a table{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Book a table</h1>
+  <p class="lead">Pick a date and party size. Free times appear straight away.</p>
+</section>
+<form method="get" action="{{ url_for('guest.book') }}" class="card search" id="search" data-api="{{ url_for('guest.api_availability') }}"
+      data-details="{{ url_for('guest.details') }}" data-max="{{ setup.values.online_max_party }}">
+  <div class="row">
+    <div class="field"><label for="date">Date</label>
+      <input id="date" name="date" type="date" value="{{ day }}" min="{{ today }}" required>
+      <div class="quick" aria-label="Quick dates">
+        <button type="button" class="chip" data-days="0">Today</button>
+        <button type="button" class="chip" data-days="1">Tomorrow</button>
+        <button type="button" class="chip" data-days="7">In a week</button>
+      </div></div>
+    <div class="field"><label for="party">Party size</label>
+      <div class="stepper">
+        <button type="button" class="step" data-step="-1" aria-label="One guest fewer">−</button>
+        <input id="party" name="party" type="number" min="1" max="50" value="{{ party }}" required inputmode="numeric">
+        <button type="button" class="step" data-step="1" aria-label="One guest more">+</button>
+      </div></div>
+    <div class="field"><button type="submit" id="find">Find times</button></div>
+  </div>
+</form>
+<div id="results" aria-live="polite">
+{% if not setup.complete %}
+  <p class="notice" role="status">Online booking is not available yet. Please try again later.</p>
+{% elif searched %}
+  {% if result.times %}
+    <h2>Available times on {{ day|longdate }}</h2>
+    <ul class="times">
+      {% for t in result.times %}
+        <li><a href="{{ url_for('guest.details', date=day, party=party, start=t) }}">{{ t }}</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="notice" role="status">{{ result.message }}</p>
+  {% endif %}
+{% endif %}
+</div>
+{% endblock %}

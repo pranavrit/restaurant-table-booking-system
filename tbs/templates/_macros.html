@@ -1,0 +1,16 @@
+{% macro field(name, label, form, errors, type="text", required=False, hint="", attrs="") -%}
+<div class="field{% if errors.get(name) %} has-error{% endif %}">
+  <label for="{{ name }}">{{ label }}{% if required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+  <input id="{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ form.get(name, '') }}"
+         {% if required %}required{% endif %}
+         {% if errors.get(name) %}aria-invalid="true" aria-describedby="{{ name }}-error"{% elif hint %}aria-describedby="{{ name }}-hint"{% endif %} {{ attrs|safe }}>
+  {% if hint and not errors.get(name) %}<p class="hint" id="{{ name }}-hint">{{ hint }}</p>{% endif %}
+  {% if errors.get(name) %}<p class="error" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro csrf() -%}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{%- endmacro %}
+
+{% macro status_badge(status) -%}
+<span class="badge s-{{ status|lower|replace(' ', '-') }}">{{ status }}</span>
+{%- endmacro %}

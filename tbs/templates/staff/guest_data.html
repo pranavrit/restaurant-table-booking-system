@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Delete guest data{% endblock %}
+{% block content %}
+<h1>Delete a guest's data</h1>
+<p>Removes name, e-mail, phone and notes from every booking with this e-mail address. This cannot be undone.</p>
+{% if result %}
+  {% if result.ok %}<p class="flash ok" role="status">{{ result.message }}</p>
+  {% elif result.data.needs_confirmation %}
+    <p class="notice" role="alert">{{ result.message }}</p>
+    <form method="post">{{ csrf() }}<input type="hidden" name="email" value="{{ email }}"><input type="hidden" name="confirm" value="yes">
+      <button class="danger" type="submit">Cancel the booking(s) and delete the data</button>
+      <a class="button secondary" href="{{ url_for('staff.guest_data') }}">Do nothing</a></form>
+  {% else %}<p class="flash error" role="alert">{{ result.message }}</p>{% endif %}
+{% endif %}
+{% if not result or result.ok or not result.data.needs_confirmation %}
+<form method="post" class="card" data-confirm="Remove this guest's personal data? This cannot be undone.">{{ csrf() }}
+  <div class="field"><label for="email">Guest e-mail address</label><input id="email" type="email" name="email" value="{{ email }}" required></div>
+  <button type="submit">Delete data</button></form>
+{% endif %}
+{% endblock %}

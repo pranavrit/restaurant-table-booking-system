@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Booking changed{% endblock %}
+{% block content %}
+{% set b = decision.booking %}
+<h1>Your booking is changed</h1>
+<div class="card"><dl class="facts">
+  <dt>Reference</dt><dd>{{ b.reference }}</dd><dt>Date</dt><dd>{{ b.booking_date|longdate }}</dd>
+  <dt>Time</dt><dd>{{ b.start_time }}</dd><dt>Party size</dt><dd>{{ b.party_size }}</dd></dl></div>
+{% endblock %}

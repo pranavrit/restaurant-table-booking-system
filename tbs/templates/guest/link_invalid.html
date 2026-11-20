@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Link not valid{% endblock %}
+{% block content %}
+<h1>This link is not valid</h1>
+<p>It may have been used already, or the booking has ended or been cancelled.</p>
+{% if setup.info.contact_phone %}<p>You can phone us on {{ setup.info.contact_phone }}.</p>{% endif %}
+{% endblock %}

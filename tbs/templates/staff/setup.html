@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, csrf %}
+{% block title %}Setup{% endblock %}
+{% block content %}
+<h1>Restaurant setup</h1>
+<nav class="jump" id="setup-jump" aria-label="Setup sections">
+  <a href="#info">Details</a><a href="#settings">Rules</a><a href="#tables">Tables</a><a href="#periods">Service periods</a><a href="#closures">Closed dates</a></nav>
+{% if not setup.complete %}<p class="notice">Online booking stays off until there is at least one table, one service period, a contact phone and a time zone.</p>{% endif %}
+
+<section class="card" id="info"><h2>Restaurant details</h2>
+  <form method="post" action="{{ url_for('staff.setup_info') }}">{{ csrf() }}
+    {{ field('restaurant_name', 'Restaurant name', form or setup.info, errors, required=True) }}
+    {{ field('contact_phone', 'Contact phone', form or setup.info, errors, type='tel', required=True, hint='Shown to guests for large parties and late cancellations.') }}
+    {{ field('time_zone', 'Time zone', form or setup.info, errors, required=True, hint='For example Asia/Dubai or Europe/London.') }}
+    <button type="submit">Save details</button></form></section>
+
+<section class="card" id="settings"><h2>Booking rules</h2>
+  <p class="hint">Changes apply to bookings made or changed from now on. Existing tables and times stay as promised.</p>
+  <form method="post" action="{{ url_for('staff.setup_settings') }}">{{ csrf() }}
+    <div class="grid2">
+    {% for s in specs %}
+      {% set current = (form or {}).get(s.key, setup.values[s.key]) %}
+      <div class="field {% if errors.get(s.key) %}has-error{% endif %}">
+        <label for="{{ s.key }}">{{ s.label }} ({{ s.unit }})</label>
+        <input id="{{ s.key }}" name="{{ s.key }}" type="number" value="{{ current }}" min="{{ s.minimum }}" max="{{ s.maximum }}" required>
+        <p class="hint">Allowed: {{ s.minimum }} to {{ s.maximum }}</p>
+        {% if errors.get(s.key) %}<p class="error">{{ errors[s.key] }}</p>{% endif %}
+      </div>
+    {% endfor %}</div>
+    <button type="submit">Save rules</button></form></section>
+
+<section class="card" id="tables"><h2>Tables</h2>
+  <div class="table-wrap"><table><thead><tr><th>Label</th><th>Min</th><th>Max</th><th>Can combine with</th><th></th></tr></thead><tbody>
+  {% for t in setup.tables|sort(attribute='label') %}
+    <tr><td colspan="5">
+      <form method="post" action="{{ url_for('staff.setup_table') }}" class="row">{{ csrf() }}
+        <input type="hidden" name="table_id" value="{{ t.id }}">
+        <div class="field"><label for="l{{ t.id }}">Label</label><input id="l{{ t.id }}" name="label" value="{{ t.label }}" maxlength="20" required></div>
+        <div class="field"><label for="mi{{ t.id }}">Min</label><input id="mi{{ t.id }}" type="number" name="min_seats" value="{{ t.min_seats }}" min="1" required></div>
+        <div class="field"><label for="ma{{ t.id }}">Max</label><input id="ma{{ t.id }}" type="number" name="max_seats" value="{{ t.max_seats }}" max="50" required></div>
+        <fieldset class="checks"><legend>Combine with</legend>
+          {% for o in setup.tables|sort(attribute='label') if o.id != t.id %}
+            <label><input type="checkbox" name="combinable" value="{{ o.id }}" {% if o.id in t.combinable %}checked{% endif %}> {{ o.label }}</label>
+          {% else %}<span class="hint">no other tables</span>{% endfor %}
+        </fieldset>
+        <button class="secondary small" type="submit">Save</button>
+      </form>
+      <form method="post" data-confirm="Remove table {{ t.label }}?" action="{{ url_for('staff.setup_table_remove', table_id=t.id) }}">{{ csrf() }}<button class="danger small" type="submit">Remove {{ t.label }}</button></form>
+    </td></tr>
+  {% else %}<tr><td colspan="5">No tables yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+  <h3>Add a table</h3>
+  <form method="post" action="{{ url_for('staff.setup_table') }}" class="row">{{ csrf() }}
+    {{ field('label', 'Label', {}, errors, required=True, attrs='maxlength="20"') }}
+    {{ field('min_seats', 'Min seats', {}, errors, type='number', required=True, attrs='min="1"') }}
+    {{ field('max_seats', 'Max seats', {}, errors, type='number', required=True, attrs='max="50"') }}
+    <div class="field"><button type="submit">Add table</button></div>
+  </form></section>
+
+<section class="card" id="periods"><h2>Service periods</h2>
+  {% for p in setup.periods %}
+    <form method="post" action="{{ url_for('staff.setup_period') }}" class="card">{{ csrf() }}
+      <input type="hidden" name="period_id" value="{{ p.id }}">
+      <div class="row">
+        <div class="field"><label for="pn{{ p.id }}">Name</label><input id="pn{{ p.id }}" name="name" value="{{ p.name }}" required></div>
+        <div class="field"><label for="ps{{ p.id }}">Start</label><input id="ps{{ p.id }}" type="time" name="start" value="{{ p.start }}" required></div>
+        <div class="field"><label for="pe{{ p.id }}">End</label><input id="pe{{ p.id }}" type="time" name="end" value="{{ p.end }}" required></div>
+        <div class="field"><label for="pl{{ p.id }}">Last bookable start</label><input id="pl{{ p.id }}" type="time" name="last_start" value="{{ p.last_start }}" required></div>
+      </div>
+      <fieldset class="checks"><legend>Days</legend>
+        {% for name in days %}<label><input type="checkbox" name="days" value="{{ loop.index0 }}" {% if loop.index0 in p.days %}checked{% endif %}> {{ name[:3] }}</label>{% endfor %}</fieldset>
+      <button class="secondary small" type="submit">Save</button>
+    </form>
+    <form method="post" data-confirm="Remove service period {{ p.name }}?" action="{{ url_for('staff.setup_period_remove', period_id=p.id) }}">{{ csrf() }}<button class="danger small" type="submit">Remove {{ p.name }}</button></form>
+  {% else %}<p>No service periods yet.</p>{% endfor %}
+  <h3>Add a service period</h3>
+  <form method="post" action="{{ url_for('staff.setup_period') }}">{{ csrf() }}
+    <div class="row">
+      {{ field('name', 'Name', {}, errors, required=True) }}
+      {{ field('start', 'Start', {}, errors, type='time', required=True) }}
+      {{ field('end', 'End', {}, errors, type='time', required=True) }}
+      {{ field('last_start', 'Last bookable start', {}, errors, type='time', required=True) }}
+    </div>
+    <fieldset class="checks"><legend>Days</legend>
+      {% for name in days %}<label><input type="checkbox" name="days" value="{{ loop.index0 }}" checked> {{ name[:3] }}</label>{% endfor %}</fieldset>
+    {% if errors.get('days') %}<p class="error">{{ errors['days'] }}</p>{% endif %}
+    <button type="submit">Add period</button></form></section>
+
+<section class="card" id="closures"><h2>Closed dates</h2>
+  <ul>{% for d in setup.closures|sort %}<li>{{ d }}
+    {% if closure_counts.get(d) %}<span class="mark">{{ closure_counts[d] }} confirmed booking(s) still on this date</span>{% endif %}
+    <form class="inline" method="post" action="{{ url_for('staff.setup_closure') }}">{{ csrf() }}<input type="hidden" name="remove" value="{{ d }}">
+      <button class="link" type="submit">remove</button></form></li>{% else %}<li>None.</li>{% endfor %}</ul>
+  <form method="post" action="{{ url_for('staff.setup_closure') }}" class="row">{{ csrf() }}
+    <div class="field"><label for="day">Mark a date closed</label><input id="day" type="date" name="day" required></div>
+    <div class="field"><button type="submit">Mark closed</button></div></form></section>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Change your booking{% endblock %}
+{% block content %}
+<h1>It is too late to change this booking online</h1>
+<p class="notice" role="alert">Please phone the restaurant on {{ setup.info.contact_phone }}.</p>
+{% endblock %}

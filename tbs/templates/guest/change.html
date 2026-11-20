@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Change your booking{% endblock %}
+{% block content %}
+<h1>Change your booking</h1>
+<p class="card">Now: <strong>{{ booking.booking_date|longdate }}</strong> at <strong>{{ booking.start_time }}</strong>,
+  {{ booking.party_size }} guest(s). Reference {{ booking.reference }}.</p>
+{% if decision %}
+  <p class="notice" role="alert">
+    {% if decision.kind == 'refused' and decision.reason == 'conflict' %}That time is no longer free. Your booking is unchanged.
+      {% if decision.alternatives %}Nearest free times: {{ decision.alternatives|join(', ') }}.{% endif %}
+    {% elif decision.kind == 'refused' %}{{ decision.message }} Your booking is unchanged.
+    {% else %}{% for m in decision.errors.values() %}{{ m }} {% endfor %}Your booking is unchanged.{% endif %}
+  </p>
+{% endif %}
+<form method="get" class="card">
+  <div class="row">
+    <div class="field"><label for="date">New date</label><input id="date" type="date" name="date" value="{{ form.get('date') }}" required></div>
+    <div class="field"><label for="party">Party size</label><input id="party" type="number" name="party" min="1" max="{{ setup.values.online_max_party }}" value="{{ form.get('party') }}" required></div>
+    <div class="field"><button type="submit" class="secondary">Show times</button></div>
+  </div>
+</form>
+{% if searched %}
+  {% if times %}
+    <form method="post">{{ csrf() }}
+      <input type="hidden" name="date" value="{{ form.get('date') }}"><input type="hidden" name="party" value="{{ form.get('party') }}">
+      <fieldset class="card"><legend>Choose a time</legend>
+        {% for t in times %}<label class="checks"><input type="radio" name="start" value="{{ t }}" required> {{ t }}</label>{% endfor %}
+      </fieldset>
+      <button type="submit">Change booking</button>
+    </form>
+  {% else %}<p class="notice">No tables are free on that date for that party size.</p>{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, csrf %}
+{% block title %}Staff accounts{% endblock %}
+{% block content %}
+<h1>Staff accounts</h1>
+<table><thead><tr><th>Name</th><th>E-mail</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>
+  {% for a in rows %}<tr><td>{{ a['name'] }}</td><td>{{ a['email'] }}</td><td>{{ a['role'] }}</td>
+    <td>{{ 'Active' if a['active'] else 'Disabled' }}</td>
+    <td><form method="post">{{ csrf() }}<input type="hidden" name="account_id" value="{{ a['id'] }}">
+      <input type="hidden" name="action" value="{{ 'disable' if a['active'] else 'enable' }}">
+      <button class="small secondary" type="submit">{{ 'Disable' if a['active'] else 'Enable' }}</button></form></td></tr>{% endfor %}</tbody></table>
+<section class="card"><h2>Add an account</h2>
+  <form method="post">{{ csrf() }}<input type="hidden" name="action" value="create">
+    {{ field('name', 'Name', form, errors, required=True) }}
+    {{ field('email', 'E-mail address', form, errors, type='email', required=True) }}
+    <div class="field"><label for="role">Role</label><select id="role" name="role"><option>Host</option><option>Manager</option></select>
+      {% if errors.get('role') %}<p class="error">{{ errors['role'] }}</p>{% endif %}</div>
+    {{ field('password', 'Password (at least 10 characters)', {}, errors, type='password', required=True, attrs='autocomplete="new-password"') }}
+    <button type="submit">Create account</button></form></section>
+{% endblock %}

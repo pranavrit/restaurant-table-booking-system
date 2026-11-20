@@ -1,0 +1,44 @@
+{% from "_macros.html" import csrf %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Book a table{% endblock %} | {{ restaurant }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="brand" href="{{ url_for('guest.book') }}">{{ restaurant }}</a>
+  <nav aria-label="Main" id="main-nav">
+    {% if account %}
+      <a href="{{ url_for('staff.day') }}">Day list</a>
+      <a href="{{ url_for('staff.booking_new') }}">New booking</a>
+      {% if account['role'] == 'Manager' %}
+        <a href="{{ url_for('staff.setup_page') }}">Setup</a>
+        <a href="{{ url_for('staff.reports') }}">Reports</a>
+        <a href="{{ url_for('staff.exceptions') }}">Exceptions</a>
+        <a href="{{ url_for('staff.accounts') }}">Accounts</a>
+        <a href="{{ url_for('staff.guest_data') }}">Guest data</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('staff.logout') }}" class="inline">{{ csrf() }}
+        <button class="link" type="submit">Sign out ({{ account['name'] }})</button></form>
+    {% else %}
+      <a href="{{ url_for('guest.book') }}">Book a table</a>
+      <a href="{{ url_for('staff.login') }}">Staff</a>
+    {% endif %}
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch between light and dark theme" title="Light or dark theme">◐</button>
+  </nav>
+</header>
+<main id="main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, text in messages %}
+      <p class="flash {{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}" data-flash>{{ text }}</p>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

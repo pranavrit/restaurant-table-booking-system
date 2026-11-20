@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, status_badge %}
+{% block title %}Booking {{ b.reference }}{% endblock %}
+{% block content %}
+<h1>Booking {{ b.reference }} {{ status_badge(b.status) }}</h1>
+<div class="card"><dl class="facts">
+  <dt>Date and time</dt><dd>{{ b.booking_date|longdate }} at {{ b.start_time }}</dd>
+  <dt>Party size</dt><dd>{{ b.party_size }}</dd>
+  <dt>Tables</dt><dd>{{ tables or 'none' }}</dd>
+  <dt>Channel</dt><dd>{{ b.channel }}</dd>
+  <dt>Guest</dt><dd>{{ b.guest_name or 'Personal data removed' }}</dd>
+  {% if b.guest_phone %}<dt>Phone</dt><dd>{{ b.guest_phone }}</dd>{% endif %}
+  {% if b.guest_email %}<dt>E-mail</dt><dd>{{ b.guest_email }}</dd>{% endif %}
+  {% if b.step_free %}<dt>Access</dt><dd>Step-free requested</dd>{% endif %}
+  {% if b.dietary_note %}<dt>Dietary note</dt><dd>{{ b.dietary_note }}</dd>{% endif %}
+  {% if b.attendance_confirmed_at %}<dt>Attendance</dt><dd>Confirmed by guest at {{ b.attendance_confirmed_at }}</dd>{% endif %}
+  {% if b.late_cancel %}<dt>Cancellation</dt><dd>Late</dd>{% endif %}
+</dl></div>
+{% if b.status == 'Confirmed' %}
+<div class="row">
+  <a class="button secondary" href="{{ url_for('staff.booking_change', reference=b.reference) }}">Change</a>
+  <form method="post" data-confirm="Cancel booking {{ b.reference }}? The guest is told by e-mail." action="{{ url_for('staff.booking_cancel', reference=b.reference) }}">{{ csrf() }}<button class="danger" type="submit">Cancel booking</button></form>
+  {% for action, label in (('arrived','Mark arrived'),('seated','Mark seated'),('no-show','Mark no-show')) %}
+  <form method="post" action="{{ url_for('staff.booking_mark', reference=b.reference, outcome=action) }}">{{ csrf() }}
+    <input type="hidden" name="back" value="{{ url_for('staff.booking_view', reference=b.reference) }}"><button class="secondary" type="submit">{{ label }}</button></form>
+  {% endfor %}
+</div>
+{% elif b.status == 'Arrived' %}
+<form method="post" action="{{ url_for('staff.booking_mark', reference=b.reference, outcome='seated') }}">{{ csrf() }}
+  <input type="hidden" name="back" value="{{ url_for('staff.booking_view', reference=b.reference) }}"><button type="submit">Mark seated</button></form>
+{% endif %}
+{% if account['role'] == 'Manager' %}
+<section class="card"><h2>Correct the outcome</h2>
+  <p class="hint">Managers can correct bookings of today or yesterday. The change is logged.</p>
+  <form method="post" action="{{ url_for('staff.booking_correct', reference=b.reference) }}" class="row">{{ csrf() }}
+    <div class="field"><label for="status">New status</label><select id="status" name="status">
+      {% for s in Status.ALL %}{% if s != b.status %}<option>{{ s }}</option>{% endif %}{% endfor %}</select></div>
+    <div class="field"><button class="secondary" type="submit">Apply correction</button></div></form></section>
+{% endif %}
+<h2>Messages</h2>
+<table><thead><tr><th>Type</th><th>Scheduled</th><th>State</th><th>Attempts</th></tr></thead><tbody>
+  {% for m in messages %}<tr><td>{{ m['type'] }}</td><td>{{ m['scheduled_for'] }}</td><td>{{ m['state'] }}</td><td>{{ m['attempts'] }}</td></tr>
+  {% else %}<tr><td colspan="4">No messages (no e-mail address, or none due yet).</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

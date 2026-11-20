@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Booking confirmed{% endblock %}
+{% block content %}
+{% set b = decision.booking %}
+<h1>Your booking is confirmed</h1>
+<div class="card">
+  <dl class="facts">
+    <dt>Reference</dt><dd><strong>{{ b.reference }}</strong></dd>
+    <dt>Date</dt><dd>{{ b.booking_date|longdate }}</dd>
+    <dt>Time</dt><dd>{{ b.start_time }}</dd>
+    <dt>Party size</dt><dd>{{ b.party_size }}</dd>
+    <dt>Grace period</dt><dd>{{ setup.values.grace_minutes }} minutes</dd>
+    <dt>Cancel online until</dt><dd>{{ setup.values.cutoff_minutes }} minutes before the start time</dd>
+    <dt>Personal data kept</dt><dd>{{ setup.values.retention_days }} days after the booking date</dd>
+  </dl>
+</div>
+<p>We have sent a confirmation to {{ b.guest_email }}. It has a link to cancel or change the booking.</p>
+{% endblock %}

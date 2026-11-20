@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Cancel your booking{% endblock %}
+{% block content %}
+<h1>Cancel your booking?</h1>
+<div class="card"><dl class="facts">
+  <dt>Reference</dt><dd>{{ booking.reference }}</dd><dt>Date</dt><dd>{{ booking.booking_date|longdate }}</dd>
+  <dt>Time</dt><dd>{{ booking.start_time }}</dd><dt>Party size</dt><dd>{{ booking.party_size }}</dd></dl></div>
+<form method="post" data-confirm="Cancel this booking now?">{{ csrf() }}<button class="danger" type="submit">Yes, cancel this booking</button>
+  <a class="button secondary" href="{{ url_for('guest.book') }}">Keep it</a></form>
+{% endblock %}

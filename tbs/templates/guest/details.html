@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field, csrf %}
+{% block title %}Your details{% endblock %}
+{% block content %}
+<h1>Your details</h1>
+{% if errors %}<p class="flash error" role="alert">Please fix the fields marked below.</p>{% endif %}
+<p class="card"><strong>{{ form.get('date')|longdate if form.get('date') else '' }}</strong> at <strong>{{ form.get('start') }}</strong>
+  for <strong>{{ form.get('party') }}</strong> guest(s).</p>
+<form method="post" action="{{ url_for('guest.confirm') }}" novalidate data-once>
+  {{ csrf() }}
+  <input type="hidden" name="date" value="{{ form.get('date', '') }}">
+  <input type="hidden" name="start" value="{{ form.get('start', '') }}">
+  <input type="hidden" name="party" value="{{ form.get('party', '') }}">
+  {% for key in ('date','start','party') %}{% if errors.get(key) %}<p class="error">{{ errors[key] }}
+    <a href="{{ url_for('guest.book') }}">Choose another time</a></p>{% endif %}{% endfor %}
+  {{ field('name', 'Name', form, errors, required=True, attrs='autocomplete="name" maxlength="100"') }}
+  {{ field('email', 'E-mail address', form, errors, type='email', required=True,
+           hint='We send your confirmation and a cancel link here.', attrs='autocomplete="email"') }}
+  {{ field('phone', 'Phone (optional)', form, errors, type='tel', attrs='autocomplete="tel"') }}
+  <div class="field"><label><input type="checkbox" name="step_free" {% if form.get('step_free') %}checked{% endif %}>
+    I need step-free access (optional)</label></div>
+  {{ field('dietary', 'Dietary note (optional)', form, errors, attrs='maxlength="300" data-counter="300"') }}
+  <section class="card" aria-labelledby="rules">
+    <h2 id="rules">Before you book</h2>
+    <ul>
+      <li>We hold your table for <strong>{{ setup.values.grace_minutes }} minutes</strong> after the start time.</li>
+      <li>You can cancel online until <strong>{{ setup.values.cutoff_minutes }} minutes</strong> before the start time.
+        After that, please phone {{ setup.info.contact_phone }}.</li>
+      <li>We keep your name and contact details for <strong>{{ setup.values.retention_days }} days</strong> after
+        the booking date, then delete them.</li>
+      <li>We use your details only to manage this booking: to confirm it, remind you and contact you about it.</li>
+      <li>This booking system is not an allergen-safety control. Please tell the staff about allergies when you arrive.</li>
+    </ul>
+    <div class="field {% if errors.get('privacy') %}has-error{% endif %}">
+      <label><input type="checkbox" name="privacy" {% if form.get('privacy') %}checked{% endif %}
+        {% if errors.get('privacy') %}aria-describedby="privacy-error"{% endif %}> I have read this and agree <span class="req">*</span></label>
+      {% if errors.get('privacy') %}<p class="error" id="privacy-error">{{ errors['privacy'] }}</p>{% endif %}
+    </div>
+  </section>
+  <button type="submit">Book this table</button>
+</form>
+{% endblock %}

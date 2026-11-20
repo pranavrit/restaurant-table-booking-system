@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Cancellation{% endblock %}
+{% block content %}
+{% if result.ok %}
+  <h1>Your booking is cancelled</h1><p>The table is free again. Thank you for letting us know.</p>
+{% else %}
+  <h1>We could not cancel online</h1><p class="notice" role="alert">{{ result.message }}</p>
+{% endif %}
+{% endblock %}
